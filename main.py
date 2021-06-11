@@ -44,6 +44,19 @@ ADDRESS1, ADDRESS2, ADDRESS3, DEAR, TEXT, CONCLUSION, SIGNATURE = range(7)
 
 
 def start(update: Update, context: CallbackContext) -> int:
+    update.message.reply_text(
+        "Visual sound waves letters generator.",
+    )
+    update.message.reply_text(
+        "Use /new_letter to create a letter. Please keep in mind that, while we won't keep the data, it is going through some Google servers. We will however collect every end result!",
+    )
+    update.message.reply_photo(photo=open("example.jpg", 'rb'), caption="Here is an indication for the different parts.")
+    update.message.reply_text(
+        "If you have any concerns, you can contact @Stache on Telegram.",
+    )
+
+
+def new_letter(update: Update, context: CallbackContext) -> int:
     user = update.message.from_user
 
     logger.info("%s (%s) is writing a letter...", user.first_name, user.id)
@@ -57,9 +70,6 @@ def start(update: Update, context: CallbackContext) -> int:
     )
     update.message.reply_text(
         "Send /cancel to stop the creation at any time.",
-    )
-    update.message.reply_text(
-        "If you have any concerns, you can contact @Stache on Telegram.",
     )
     update.message.reply_text(
         "Let's start with the first line of the address:",
@@ -206,7 +216,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
 
 def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
-    update.message.reply_text("To start creating a letter, use /start.")
+    update.message.reply_text("/start - Get a general knowledge on what you shall create!\n/new_letter - Start the creation of a sound new letter.\n/skip - Skip a specific part of the letter.\n/cancel - Cancel the creation of a letter.\n/help - All commands available.")
 
 
 def downloader(update, context) -> None:
@@ -225,7 +235,7 @@ def main() -> None:
 
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
+        entry_points=[CommandHandler('new_letter', new_letter)],
         states={
             ADDRESS1: [MessageHandler(Filters.text & ~Filters.command, address1), CommandHandler('skip', address1)],
             ADDRESS2: [MessageHandler(Filters.text & ~Filters.command, address2), CommandHandler('skip', address2)],
@@ -241,16 +251,17 @@ def main() -> None:
     dispatcher.add_handler(conv_handler)
 
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("start", start))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, help_command))
 
     # Start the Bot
-    # updater.start_polling()
-    updater.start_webhook(listen="0.0.0.0",
-                          port=PORT,
-                          url_path=TOKEN)
-    updater.bot.set_webhook("hidden-savannah-50354" + TOKEN)
+    updater.start_polling()
+    # updater.start_webhook(listen="0.0.0.0",
+    #                       port=PORT,
+    #                       url_path=TOKEN)
+    # updater.bot.set_webhook("hidden-savannah-50354" + TOKEN)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
