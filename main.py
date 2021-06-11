@@ -60,7 +60,7 @@ def start(update: Update, context: CallbackContext) -> int:
         "If you have any concerns, you can contact @Stache on Telegram.",
     )
     update.message.reply_text(
-        "Let's start with the first line of the address.",
+        "Let's start with the first line of the address:",
     )
 
     return ADDRESS1
@@ -75,7 +75,7 @@ def address1(update: Update, context: CallbackContext) -> int:
     else:
         del context.user_data[user.id]['address1']
 
-    update.message.reply_text("address2.")
+    update.message.reply_text("Adress line 2:")
 
     return ADDRESS2
 
@@ -89,7 +89,7 @@ def address2(update: Update, context: CallbackContext) -> int:
     else:
         del context.user_data[user.id]['address2']
 
-    update.message.reply_text("address3.")
+    update.message.reply_text("Adress line 3:")
 
     return ADDRESS3
 
@@ -108,7 +108,7 @@ def address3(update: Update, context: CallbackContext) -> int:
     except:
         del context.user_data[user.id]['space1']
 
-    update.message.reply_text("dear.")
+    update.message.reply_text("Introduction (\"Dear something\"):")
 
     return DEAR
 
@@ -123,7 +123,7 @@ def dear(update: Update, context: CallbackContext) -> int:
         del context.user_data[user.id]['dear']
         del context.user_data[user.id]['space2']
 
-    update.message.reply_text("text.")
+    update.message.reply_text("Text (if too long, will be cropped):")
 
     return TEXT
 
@@ -138,7 +138,7 @@ def text(update: Update, context: CallbackContext) -> int:
         del context.user_data[user.id]['text']
         del context.user_data[user.id]['space3']
 
-    update.message.reply_text("conclusion.")
+    update.message.reply_text("Conclusion (\"Best regards,\"):")
 
     return CONCLUSION
 
@@ -152,7 +152,7 @@ def conclusion(update: Update, context: CallbackContext) -> int:
     else:
         del context.user_data[user.id]['conclusion']
 
-    update.message.reply_text("signature.")
+    update.message.reply_text("Signature:")
 
     return SIGNATURE
 
