@@ -38,6 +38,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+PORT = int(os.environ.get('PORT', '8443'))
+
 ADDRESS1, ADDRESS2, ADDRESS3, DEAR, TEXT, CONCLUSION, SIGNATURE = range(7)
 
 
@@ -244,7 +246,11 @@ def main() -> None:
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, help_command))
 
     # Start the Bot
-    updater.start_polling()
+    # updater.start_polling()
+    updater.start_webhook(listen="0.0.0.0",
+                          port=PORT,
+                          url_path=TOKEN)
+    updater.bot.set_webhook("hidden-savannah-50354" + TOKEN)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
