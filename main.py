@@ -228,7 +228,7 @@ def downloader(update, context) -> None:
 def main() -> None:
     """Run the bot."""
     # Create the Updater and pass it your bot's token.
-    updater = Updater(TOKEN)
+    updater = Updater(TOKEN, workers=8)
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
@@ -246,6 +246,7 @@ def main() -> None:
             SIGNATURE: [MessageHandler(Filters.text & ~Filters.command, signature), CommandHandler('skip', signature)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
+        run_async=True,
     )
 
     dispatcher.add_handler(conv_handler)
