@@ -30,6 +30,9 @@ import re
 from uuid import uuid4
 import os
 from secret import TOKEN
+from peewee import *
+from playhouse.shortcuts import model_to_dict
+
 
 # Enable logging
 logging.basicConfig(
@@ -41,6 +44,23 @@ logger = logging.getLogger(__name__)
 PORT = int(os.environ.get('PORT', '8443'))
 
 ADDRESS1, ADDRESS2, ADDRESS3, DEAR, TEXT, CONCLUSION, SIGNATURE = range(7)
+
+
+db = SqliteDatabase("./main.db")
+
+
+class Letter(Model):
+    userid = BigIntegerField()
+    address1 = TextField(null=True)
+    address2 = TextField(null=True)
+    address3 = TextField(null=True)
+    dear = TextField(null=True)
+    text = TextField(null=True)
+    conclusion = TextField(null=True)
+    signature = TextField(null=True)
+
+    class Meta:
+        database = db
 
 
 def start(update: Update, context: CallbackContext) -> int:
@@ -60,7 +80,13 @@ def new_letter(update: Update, context: CallbackContext) -> int:
     user = update.message.from_user
 
     logger.info("%s (%s) is writing a letter...", user.first_name, user.id)
-    context.user_data[user.id] = EXAMPLE.copy()
+
+    try:
+        letter = Letter.get(userid=user.id)
+        letter.delete_instance()
+    except:
+        pass
+    letter = Letter(userid=user.id).save()
 
     update.message.reply_text(
         "Let's create a sound letter together.",
@@ -83,9 +109,9 @@ def address1(update: Update, context: CallbackContext) -> int:
     content = update.message.text
 
     if content != '/skip':
-        context.user_data[user.id]['address1']['text'] = content
-    else:
-        del context.user_data[user.id]['address1']
+        letter = Letter.get(Letter.userid == user.id)
+        letter.address1 = content
+        letter.save()
 
     update.message.reply_text("Adress line 2:")
 
@@ -97,9 +123,9 @@ def address2(update: Update, context: CallbackContext) -> int:
     content = update.message.text
 
     if content != '/skip':
-        context.user_data[user.id]['address2']['text'] = content
-    else:
-        del context.user_data[user.id]['address2']
+        letter = Letter.get(Letter.userid == user.id)
+        letter.address2 = content
+        letter.save()
 
     update.message.reply_text("Adress line 3:")
 
@@ -111,14 +137,9 @@ def address3(update: Update, context: CallbackContext) -> int:
     content = update.message.text
 
     if content != '/skip':
-        context.user_data[user.id]['address3']['text'] = content
-    else:
-        del context.user_data[user.id]['address3']
-
-    try:
-        a, b, c = context.user_data[user.id]['address1'], context.user_data[user.id]['address2'], context.user_data[user.id]['address3']
-    except:
-        del context.user_data[user.id]['space1']
+        letter = Letter.get(Letter.userid == user.id)
+        letter.address3 = content
+        letter.save()
 
     update.message.reply_text("Introduction (\"Dear something\"):")
 
@@ -130,10 +151,9 @@ def dear(update: Update, context: CallbackContext) -> int:
     content = update.message.text
 
     if content != '/skip':
-        context.user_data[user.id]['dear']['text'] = content
-    else:
-        del context.user_data[user.id]['dear']
-        del context.user_data[user.id]['space2']
+        letter = Letter.get(Letter.userid == user.id)
+        letter.dear = content
+        letter.save()
 
     update.message.reply_text("Text (if too long, will be cropped):")
 
@@ -145,10 +165,9 @@ def text(update: Update, context: CallbackContext) -> int:
     content = update.message.text
 
     if content != '/skip':
-        context.user_data[user.id]['text']['text'] = content
-    else:
-        del context.user_data[user.id]['text']
-        del context.user_data[user.id]['space3']
+        letter = Letter.get(Letter.userid == user.id)
+        letter.text = content
+        letter.save()
 
     update.message.reply_text("Conclusion (\"Best regards,\"):")
 
@@ -160,9 +179,9 @@ def conclusion(update: Update, context: CallbackContext) -> int:
     content = update.message.text
 
     if content != '/skip':
-        context.user_data[user.id]['conclusion']['text'] = content
-    else:
-        del context.user_data[user.id]['conclusion']
+        letter = Letter.get(Letter.userid == user.id)
+        letter.conclusion = content
+        letter.save()
 
     update.message.reply_text("Signature:")
 
@@ -174,24 +193,42 @@ def signature(update: Update, context: CallbackContext) -> int:
     content = update.message.text
 
     if content != '/skip':
-        context.user_data[user.id]['signature']['text'] = content
-    else:
-        del context.user_data[user.id]['signature']
+        letter = Letter.get(Letter.userid == user.id)
+        letter.signature = content
+        letter.save()
 
     update.message.reply_text("It's over! Thank you for your participation.")
+
+    result = EXAMPLE.copy()
+    letter = Letter.get(Letter.userid == user.id)
+    letter_dict = model_to_dict(letter)
+
+    for k, v in letter_dict.items():
+        if k in result:
+            if v:
+                result[k]['text'] = v
+            else:
+                del result[k]
+
+    if not letter.address1 and not letter.address2 and not letter.address3:
+        del result['space1']
+    if not letter.dear:
+        del result['space2']
+    if not letter.text:
+        del result['space3']
 
     logger.info("... Processing ...")
     update.message.reply_text("Your file is being generated, please wait a little while...")
     username = re.sub(r'[\\/*?:"<>|]', "-", user.first_name)
     filename = os.path.join("results/", "{}_{}.pdf".format(username, str(uuid4())))
-    process(context.user_data[user.id], filename=filename, verbatim=True)
+    process(result, filename=filename, verbatim=True)
     logger.info("... File saved ...")
 
     update.message.reply_text("It's ready!")
     update.message.reply_document(document=open(filename, 'rb'), filename="Letter from {}.pdf".format(username))
     logger.info("... File sent ...")
 
-    context.user_data[user.id].clear()
+    letter.delete_instance()
 
     update.message.reply_text("Thank you for joining in. Feel free to create a new letter with /start.")
     update.message.reply_text("If you are going to print it, feel free to send me (@Stache) a little photo - if it's okay for you, of course!")
@@ -209,7 +246,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
     update.message.reply_text(
         'Feel free to use /start to start the conversation again.'
     )
-    context.user_data[user.id].clear()
+    Letter.delete().where(Letter.userid == user.id).execute()
 
     return ConversationHandler.END
 
@@ -226,6 +263,9 @@ def downloader(update, context) -> None:
 
 
 def main() -> None:
+    db.connect()
+    db.create_tables([Letter])
+
     """Run the bot."""
     # Create the Updater and pass it your bot's token.
     updater = Updater(TOKEN)

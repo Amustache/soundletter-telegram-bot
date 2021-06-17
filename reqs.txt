@@ -1,2 +1,0 @@
-python-telegram-bot<13.6
-git+git://github.com/Amustache/Cantwell/@main#egg=soundletter
