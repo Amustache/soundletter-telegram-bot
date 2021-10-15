@@ -74,6 +74,8 @@ def start(update: Update, context: CallbackContext) -> int:
     update.message.reply_text(
         "If you have any concerns, you can contact @Stache on Telegram.",
     )
+    c = _need()
+    update.message.reply_text("Current number of letter:\n{}{} {}%".format("▓" * (c // 5), "░" * ((100 - c) // 5), c))
 
 
 def new_letter(update: Update, context: CallbackContext) -> int:
@@ -219,7 +221,7 @@ def signature(update: Update, context: CallbackContext) -> int:
 
     logger.info("... Processing ...")
     update.message.reply_text("Your file is being generated, please wait a little while...")
-    username = re.sub(r'[\\/*?:"<>|]', "-", user.first_name)
+    username = re.sub(r'[\\/*~?:"<>|]', "-", user.first_name)
     filename = os.path.join("results/", "{}_{}.pdf".format(username, str(uuid4())))
     process(result, filename=filename, verbatim=True)
     logger.info("... File saved ...")
@@ -244,7 +246,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
     logger.info("%s (%s) does not want a letter no more...", user.first_name, user.id)
 
     update.message.reply_text(
-        'Feel free to use /start to start the conversation again.'
+        'Feel free to use /new_letter to start the conversation again.'
     )
     Letter.delete().where(Letter.userid == user.id).execute()
 
@@ -253,7 +255,24 @@ def cancel(update: Update, context: CallbackContext) -> int:
 
 def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
-    update.message.reply_text("/start - Get a general knowledge on what you shall create!\n/new_letter - Start the creation of a sound new letter.\n/skip - Skip a specific part of the letter.\n/cancel - Cancel the creation of a letter.\n/help - All commands available.")
+    update.message.reply_text("""/start - Get a general knowledge on what you shall create!
+/new_letter - Start the creation of a sound new letter.
+/skip - Skip a specific part of the letter.
+/cancel - Cancel the creation of a letter.
+/help - All commands available.
+/needed - Display how many letters are needed for the project.""")
+
+
+def _need():
+    l = len([name for name in os.listdir("./results/") if os.path.isfile(os.path.join("./results/", name))]) - 1
+    t = 50
+    c = int(100 * l / t) if l < t else 100
+    return c
+
+
+def needed(update: Update, context: CallbackContext) -> None:
+    c = _need()
+    update.message.reply_text("Current number of letter:\n{}{} {}%".format("▓" * (c // 5), "░" * ((100 - c) // 5), c))
 
 
 def downloader(update, context) -> None:
@@ -292,6 +311,7 @@ def main() -> None:
 
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("needed", needed))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, help_command))
