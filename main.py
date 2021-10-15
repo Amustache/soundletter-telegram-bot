@@ -75,7 +75,7 @@ def start(update: Update, context: CallbackContext) -> int:
         "If you have any concerns, you can contact @Stache on Telegram.",
     )
     c = _need()
-    update.message.reply_text("Current number of letter:\n{}{} {}%".format("▓" * (c // 5), "░" * ((100 - c) // 5), c))
+    update.message.reply_text("Current number of letters:\n{}{} {}%".format("▓" * (c // 5), "░" * ((100 - c) // 5), c))
 
 
 def new_letter(update: Update, context: CallbackContext) -> int:
@@ -272,7 +272,7 @@ def _need():
 
 def needed(update: Update, context: CallbackContext) -> None:
     c = _need()
-    update.message.reply_text("Current number of letter:\n{}{} {}%".format("▓" * (c // 5), "░" * ((100 - c) // 5), c))
+    update.message.reply_text("Current number of letters:\n{}{} {}%".format("▓" * (c // 5), "░" * ((100 - c) // 5), c))
 
 
 def downloader(update, context) -> None:
